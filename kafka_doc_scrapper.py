@@ -7,12 +7,12 @@ from json import dump as jdump
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
-from src.transformers import Broker
+from src.transformers import Broker, Consumer, Producer, Topic, Connect, Stream
 from src.functions import Functions
 
 class Scrapper:
 
-    def run(kafka_url, doc_path, transformers, outfile=None, debug_file=None):
+    def run(kafka_url, doc_path, transformers, outfile=None, debug_file=None, filter_versions=None):
         if debug_file is None or not isfile(debug_file):
             print(f"Scraping '{kafka_url}' to get '{doc_path}'...")
             driver = Scrapper._init_web_driver()
@@ -36,6 +36,8 @@ class Scrapper:
             print(f"Writing the scraping result '{debug_file}'...")
             with open(debug_file, "wb") as f:
                 pdump(versions, f)
+        if filter_versions is not None:
+            versions = list(filter(lambda x: x["version"] in filter_versions.split(','), versions))
         transformed = {}
         for transformer in transformers:
             transformed[transformer.__name__.lower()] = transformer.transform(versions)
@@ -76,6 +78,7 @@ if __name__ == "__main__":
     arg_parser.add_argument('--transformers', dest='transformers', type=str, help='Configuration transformer(s) to run (ex: Broker,Producer)', default="Broker")
     arg_parser.add_argument('--outfile', dest='outfile', type=str, help='File where to write the JSON (if null then the JSON is returned at execution).')
     arg_parser.add_argument('--debug_file', dest='debug_file', type=str, help='File to store and use website HTML content.')
+    arg_parser.add_argument('--versions', dest='versions', type=str, help='Runs only on the given versions.')
     args = arg_parser.parse_args()
     initialized_transformers = map(lambda x: globals()[x], args.transformers.split(','))
-    Scrapper.run(args.kafka_url, args.doc_path, initialized_transformers, outfile=args.outfile, debug_file=args.debug_file)
+    Scrapper.run(args.kafka_url, args.doc_path, initialized_transformers, outfile=args.outfile, debug_file=args.debug_file, filter_versions=args.versions)
