@@ -1,5 +1,6 @@
 from src.functions import Functions
 from pandas import concat
+from src.utils import Utils
 
 class Transformer:
 
@@ -29,7 +30,7 @@ class Transformer:
     class Mapper:
 
         def map(version, bs, configuration, ids):
-            print(f"Finding configuration for version '{version}'...")
+            Utils.log(f"Finding configuration for version '{version}'...")
             final_columns = ["name", "value"]
             func_find = Transformer.Mapper._func_find(version, configuration)
             if func_find is not None:
@@ -59,33 +60,33 @@ class Transformer:
                 if filters is not None:
                     version_filter = list(filter(lambda x: x["version"] == version_config["version"], filters))
                     if len(version_filter) > 0:
-                        print("Applying filter...")
+                        Utils.log("Applying filter...")
                         df = version_filter[0]["function"](df)
                 transformed.append({
                     "version": version_config["version"],
                     "configs": list(sorted(df.to_dict('records'), key=lambda x: x["name"]))
                 })
             else:
-                print("Config type not present in that version or version not handled.")
+                Utils.log("Config type not present in that version or version not handled.")
         return transformed
 
 
 class Broker:
 
     def transform(versions):
-        print("Running Broker config transformation...")
+        Utils.log("Running Broker config transformation...")
         return Transformer.transform(versions, Transformer.common_configuration, ["brokerconfigs", "kafka.server.KafkaConfig"])
 
 class Consumer:
 
     def transform(versions):
-        print("Running Consumer config transformation...")
+        Utils.log("Running Consumer config transformation...")
         return Transformer.transform(versions, Transformer.common_configuration, ["consumerconfigs", "oldconsumerconfigs", "newconsumerconfigs", "kafka.consumer.ConsumerConfig"])
 
 class Producer:
 
     def transform(versions):
-        print("Running Producer config transformation...")
+        Utils.log("Running Producer config transformation...")
         return Transformer.transform(
             versions, 
             Transformer.common_configuration,
@@ -101,17 +102,17 @@ class Producer:
 class Topic:
 
     def transform(versions):
-        print("Running Topic config transformation...")
+        Utils.log("Running Topic config transformation...")
         return Transformer.transform(versions, Transformer.common_configuration, ["topicconfigs"])
 
 class Connect:
 
     def transform(versions):
-        print("Running Connect config transformation...")
+        Utils.log("Running Connect config transformation...")
         return Transformer.transform(versions, Transformer.common_configuration, ["connectconfigs", "sourceconnectconfigs", "sinkconnectconfigs"])
 
 class Stream:
 
     def transform(versions):
-        print("Running Stream config transformation...")
+        Utils.log("Running Stream config transformation...")
         return Transformer.transform(versions, Transformer.common_configuration, ["streamsconfigs"])
