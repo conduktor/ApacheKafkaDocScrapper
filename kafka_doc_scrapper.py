@@ -76,7 +76,7 @@ if __name__ == "__main__":
     arg_parser = ArgumentParser()
     arg_parser.add_argument('--kafka_url', dest='kafka_url', type=str, help='Main url of Apache Kafka documentation (ex: https://kafka.apache.org).', default="https://kafka.apache.org")
     arg_parser.add_argument('--doc_path', dest='doc_path', type=str, help='Documentation endpoint name (ex: documentation).', default="documentation")
-    arg_parser.add_argument('--transformers', dest='transformers', type=str, help='Configuration transformer(s) to run (ex: Broker,Producer).', default="Broker")
+    arg_parser.add_argument('--transformers', dest='transformers', type=str, help='Configuration transformer(s) to run (ex: Broker,Producer).', default="Broker,Consumer,Producer,Topic,Connect,Stream")
     arg_parser.add_argument('--outfile', dest='outfile', type=str, help='File where to write the JSON (if null then the JSON is returned at execution).')
     arg_parser.add_argument('--debug_file', dest='debug_file', type=str, help='File to store and use website HTML content.')
     arg_parser.add_argument('--versions', dest='versions', type=str, help='Runs only on the given versions (ex: 1.1,2.5).')
