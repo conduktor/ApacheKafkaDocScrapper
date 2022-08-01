@@ -109,7 +109,11 @@ class Connect:
 
     def transform(versions):
         Utils.log("Running Connect config transformation...")
-        return Transformer.transform(versions, Transformer.common_configuration, ["connectconfigs", "sourceconnectconfigs", "sinkconnectconfigs"])
+        return {
+            "connect_default": Transformer.transform(versions, Transformer.common_configuration, ["connectconfigs"]),
+            "connect_source": Transformer.transform(versions, Transformer.common_configuration, ["sourceconnectconfigs"]),
+            "connect_sink": Transformer.transform(versions, Transformer.common_configuration, ["sinkconnectconfigs"])
+        }
 
 class Stream:
 
