@@ -1,5 +1,7 @@
 from bs4 import BeautifulSoup
 from pandas import read_html, concat, DataFrame
+from re import sub
+from boltons.iterutils import remap
 
 class Functions:
 
@@ -30,6 +32,7 @@ class Functions:
                         data[tr.find("th").text] = [tr.find("td").text]
                     df = DataFrame(data=data)
                     df["name"] = h4.find("a")['id']
+                    df["description"] = li.find("p").text.strip()
                     full_df = df if full_df is None else concat([full_df, df], ignore_index=True)
             return Functions.to_lowercase_df(full_df)
 
@@ -47,8 +50,14 @@ class Functions:
                         data[li2.find("b").text] = [li2.text.split(':')[1].strip()]
                     df = DataFrame(data=data)
                     df["name"] = b.text
+                    tag = Functions.get_bs_parsed(sub("<b.*</b>", "", sub('<ul.*</ul>|\n', "", sub("<code>|</code>", "'", str(li)))).replace(':', '', 1))
+                    df["description"] = ''.join(tag.findAll(text=True)).strip()
                     if full_df is None:
                         full_df = df
                     else:
                         full_df = concat([full_df, df], ignore_index=True)
             return Functions.to_lowercase_df(full_df)
+
+    def delete_attr_from_config(config, filters):
+        return remap(config, visit=lambda _, key, __: key not in filters)
+

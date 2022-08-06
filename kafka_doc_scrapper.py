@@ -7,13 +7,13 @@ from json import dump as jdump
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
-from src.transformers import Broker, Consumer, Producer, Topic, Connect, Stream
+import src.transformers as T
 from src.functions import Functions
 from src.utils import Utils
 
 class Scrapper:
 
-    def run(kafka_url, doc_path, transformers, outfile=None, debug_file=None, filter_versions=None):
+    def run(kafka_url, doc_path, transformers, outfile=None, debug_file=None, filter_versions=None, add_config_documentation=False):
         if debug_file is None or not isfile(debug_file):
             Utils.log(f"Scraping '{kafka_url}' to get '{doc_path}'...")
             driver = Scrapper._init_web_driver()
@@ -39,9 +39,16 @@ class Scrapper:
                 pdump(versions, f)
         if filter_versions is not None:
             versions = list(filter(lambda x: x["version"] in filter_versions.split(','), versions))
+        if add_config_documentation:
+            T.Transformer.Mapper.final_columns.append("description")
         transformed = {}
         for transformer in transformers:
-            transformed[transformer.__name__.lower()] = transformer.transform(versions)
+            name = transformer.__name__
+            Utils.log(f"Running {name} config transformation...")
+            transformed[name.lower()] = transformer.transform(versions)
+        if add_config_documentation:
+            Utils.log("Building documentation of config parameters...")
+            transformed = T.DocumentationTransformer.transform(transformed)
         if outfile is None:
             return transformed
         with open(outfile, "w") as f:
@@ -80,8 +87,17 @@ if __name__ == "__main__":
     arg_parser.add_argument('--outfile', dest='outfile', type=str, help='File where to write the JSON (if null then the JSON is returned at execution).')
     arg_parser.add_argument('--debug_file', dest='debug_file', type=str, help='File to store and use website HTML content.')
     arg_parser.add_argument('--versions', dest='versions', type=str, help='Runs only on the given versions (ex: 1.1,2.5).')
-    arg_parser.add_argument('--silent', dest='silent', help='If true then the program will run without logs.', action='store_true')
+    arg_parser.add_argument('--silent', dest='silent', help='Runs without logs.', action='store_true')
+    arg_parser.add_argument('--add_config_documentation', dest='add_config_documentation', help='Adds field "documentation" of all configs description.', action='store_true')
     args = arg_parser.parse_args()
-    initialized_transformers = map(lambda x: globals()[x], args.transformers.split(','))
+    initialized_transformers = map(lambda x: getattr(T, x), args.transformers.split(','))
     Utils.silent = args.silent
-    Scrapper.run(args.kafka_url, args.doc_path, initialized_transformers, outfile=args.outfile, debug_file=args.debug_file, filter_versions=args.versions)
+    Scrapper.run(
+        args.kafka_url, 
+        args.doc_path, 
+        initialized_transformers, 
+        outfile=args.outfile, 
+        debug_file=args.debug_file, 
+        filter_versions=args.versions, 
+        add_config_documentation=args.add_config_documentation
+    )

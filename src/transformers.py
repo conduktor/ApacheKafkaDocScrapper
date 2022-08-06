@@ -1,6 +1,7 @@
 from src.functions import Functions
 from pandas import concat
 from src.utils import Utils
+from itertools import chain
 
 class Transformer:
 
@@ -29,9 +30,10 @@ class Transformer:
 
     class Mapper:
 
-        def map(version, bs, configuration, ids):
+        final_columns = ["name", "value"]
+
+        def map(version, bs, configuration, ids, ):
             Utils.log(f"Finding configuration for version '{version}'...")
-            final_columns = ["name", "value"]
             func_find = Transformer.Mapper._func_find(version, configuration)
             if func_find is not None:
                 full_df = None
@@ -42,7 +44,7 @@ class Transformer:
                             "property": "name",
                             "default": "value",
                             "default:": "value"
-                        })[final_columns]
+                        })[Transformer.Mapper.final_columns]
                         full_df = df if full_df is None else concat([full_df, df], ignore_index=True)
                 return full_df
 
@@ -74,19 +76,16 @@ class Transformer:
 class Broker:
 
     def transform(versions):
-        Utils.log("Running Broker config transformation...")
         return Transformer.transform(versions, Transformer.common_configuration, ["brokerconfigs", "kafka.server.KafkaConfig"])
 
 class Consumer:
 
     def transform(versions):
-        Utils.log("Running Consumer config transformation...")
         return Transformer.transform(versions, Transformer.common_configuration, ["consumerconfigs", "oldconsumerconfigs", "newconsumerconfigs", "kafka.consumer.ConsumerConfig"])
 
 class Producer:
 
     def transform(versions):
-        Utils.log("Running Producer config transformation...")
         return Transformer.transform(
             versions, 
             Transformer.common_configuration,
@@ -102,13 +101,11 @@ class Producer:
 class Topic:
 
     def transform(versions):
-        Utils.log("Running Topic config transformation...")
         return Transformer.transform(versions, Transformer.common_configuration, ["topicconfigs"])
 
 class Connect:
 
     def transform(versions):
-        Utils.log("Running Connect config transformation...")
         return {
             "connect_default": Transformer.transform(versions, Transformer.common_configuration, ["connectconfigs"]),
             "connect_source": Transformer.transform(versions, Transformer.common_configuration, ["sourceconnectconfigs"]),
@@ -118,5 +115,28 @@ class Connect:
 class Stream:
 
     def transform(versions):
-        Utils.log("Running Stream config transformation...")
         return Transformer.transform(versions, Transformer.common_configuration, ["streamsconfigs"])
+
+class DocumentationTransformer:
+
+    def transform(configs):
+        lst = DocumentationTransformer._get_all_config(configs)
+        docs = {}
+        for elt in lst:
+            docs[elt["name"]] = elt["description"]
+        return {
+            **Functions.delete_attr_from_config(configs, ["description"]),
+            "documentation": dict(sorted(docs.items(), key=lambda x: x[0]))
+        }
+
+    def _get_all_config(configs):
+
+        def _get_values(d):
+            for v in d.values():
+                if isinstance(v, dict):
+                    yield from _get_values(v)
+                else:
+                    yield v
+
+        values = chain.from_iterable(filter(lambda x: isinstance(x, list), list(_get_values(configs))))
+        return list(chain.from_iterable(map(lambda x: x["configs"], sorted(values, key=lambda x: x["version"]))))
