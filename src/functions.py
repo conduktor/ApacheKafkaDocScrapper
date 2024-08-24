@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup
 from pandas import read_html, concat, DataFrame
 from re import sub
 from boltons.iterutils import remap
+from io import StringIO
 
 class Functions:
 
@@ -16,7 +17,7 @@ class Functions:
         a = find_func(bs, id_class)
         if a is not None:
             table = str(a.parent.find_next_sibling("table"))
-            return Functions.to_lowercase_df(read_html(table)[0])
+            return Functions.to_lowercase_df(read_html(StringIO(table))[0])
 
     def load_df_from_ul_table(bs, id_class, find_func):
         a = find_func(bs, id_class)

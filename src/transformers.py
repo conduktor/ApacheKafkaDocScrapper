@@ -22,7 +22,7 @@ class Transformer:
             "find": lambda bs, id_class: bs.find("a", {"id": id_class})
         },
         {
-            "versions": ["2.5", "2.6", "2.7", "2.8", "3.0", "3.1", "3.2"],
+            "versions": ["2.5", "2.6", "2.7", "2.8", "3.0", "3.1", "3.2", "3.3", "3.4", "3.5", "3.6", "3.7", "3.8"],
             "function": Functions.load_df_from_ul_table,
             "find": lambda bs, id_class: bs.find("a", {"id": id_class})
         }
